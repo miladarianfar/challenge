@@ -3,6 +3,8 @@ import { ChangeEvent, useState } from "react";
 const TextForm = () => {
   const [text, setText] = useState<string>("");
   const [textList, setTextList] = useState<string[]>([]);
+  const [searchText, setSearchText] = useState<string>("");
+  const [searchResult, setSearchResult] = useState<string[]>([]);
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     setText(e.target.value);
@@ -16,8 +18,57 @@ const TextForm = () => {
     }
   };
 
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchText(e.target.value);
+    if (e.target.value.trim() !== "") {
+      const filterData = filterTestList(e.target.value);
+      setSearchResult(filterData);
+    } else {
+      setSearchResult([]);
+    }
+  };
+
+  const highlightMatch = (text: string, searchText: string) => {
+    if (!searchText) return text;
+    const regex = new RegExp(`(${searchText})`, "gi");
+    return text.replace(regex, "<strong>$1</strong>");
+  };
+
+  const filterTestList = (text: string) => {
+    return textList.filter((item) =>
+      item.toLowerCase().includes(text.toLowerCase())
+    );
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center p-24">
+    <div>
+      <div className="mb-4">
+        <input
+          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          id="searchText"
+          type="text"
+          placeholder="Search text"
+          onChange={handleSearchInputChange}
+        />
+      </div>
+      <div>
+        <h2 className="text-xl font-bold mb-2">Search Result</h2>
+        {searchResult.length === 0 ? (
+          <p>No results found.</p>
+        ) : (
+          <ul>
+            {searchResult.map((item: string, index: number) => (
+              <li
+                key={index}
+                className="mb-1"
+                dangerouslySetInnerHTML={{
+                  __html: highlightMatch(item, searchText),
+                }}
+              />
+            ))}
+          </ul>
+        )}
+      </div>
       <form
         className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-6"
         onSubmit={(e) => handleOnSubmit(e)}
@@ -47,7 +98,7 @@ const TextForm = () => {
           <p key={index}>{text}</p>
         ))}
       </div>
-    </main>
+    </div>
   );
 };
 
