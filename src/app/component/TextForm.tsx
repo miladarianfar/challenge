@@ -30,14 +30,22 @@ const TextForm = () => {
 
   const highlightMatch = (text: string, searchText: string) => {
     if (!searchText) return text;
-    const regex = new RegExp(`(${searchText})`, "gi");
-    return text.replace(regex, "<strong>$1</strong>");
+    const searchTerms = searchText.toLowerCase().split(" ");
+
+    const isMatch = searchTerms.every((term) =>
+      text.toLowerCase().includes(term)
+    );
+
+    if (isMatch) {
+      const regex = new RegExp(`(${searchTerms.join("|")})`, "gi");
+      return text.replace(regex, "<strong>$1</strong>");
+    } else {
+      return text;
+    }
   };
 
   const filterTestList = (text: string) => {
-    return textList.filter((item) =>
-      item.toLowerCase().includes(text.toLowerCase())
-    );
+    return textList.filter((item) => highlightMatch(item, text) !== item);
   };
 
   return (
