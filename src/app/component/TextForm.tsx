@@ -1,10 +1,19 @@
 import { ChangeEvent, useState } from "react";
 
+const debounce = (func: Function, delay: number) => {
+  let timeoutId: NodeJS.Timeout;
+  return (...args: any[]) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), delay);
+  };
+};
+
 const TextForm = () => {
   const [text, setText] = useState<string>("");
   const [textList, setTextList] = useState<string[]>([]);
   const [searchText, setSearchText] = useState<string>("");
   const [searchResult, setSearchResult] = useState<string[]>([]);
+  const [isSearchFocused, setIsSearchFocused] = useState<boolean>(false);
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     setText(e.target.value);
@@ -18,15 +27,18 @@ const TextForm = () => {
     }
   };
 
-  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchText(e.target.value);
-    if (e.target.value.trim() !== "") {
-      const filterData = filterTestList(e.target.value);
-      setSearchResult(filterData);
-    } else {
-      setSearchResult([]);
-    }
-  };
+  const handleSearchInputChange = debounce(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSearchText(e.target.value);
+      if (e.target.value.trim() !== "") {
+        const filterData = filterTestList(e.target.value);
+        setSearchResult(filterData);
+      } else {
+        setSearchResult([]);
+      }
+    },
+    3000
+  );
 
   const highlightMatch = (text: string, searchText: string) => {
     if (!searchText) return text;
@@ -44,38 +56,55 @@ const TextForm = () => {
     }
   };
 
+  const handleSearchInputFocus = () => {
+    setIsSearchFocused(true);
+  };
+
+  const handleSearchInputBlur = () => {
+    setIsSearchFocused(false);
+  };
+
   const filterTestList = (text: string) => {
     return textList.filter((item) => highlightMatch(item, text) !== item);
   };
 
   return (
     <div>
-      <div className="mb-4">
+      <div className="mb-4 relative">
         <input
           className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
           id="searchText"
           type="text"
           placeholder="Search text"
           onChange={handleSearchInputChange}
+          onFocus={handleSearchInputFocus}
+          onBlur={handleSearchInputBlur}
         />
-      </div>
-      <div>
-        <h2 className="text-xl font-bold mb-2">Search Result</h2>
-        {searchResult.length === 0 ? (
-          <p>No results found.</p>
-        ) : (
-          <ul>
-            {searchResult.map((item: string, index: number) => (
-              <li
-                key={index}
-                className="mb-1"
-                dangerouslySetInnerHTML={{
-                  __html: highlightMatch(item, searchText),
-                }}
-              />
-            ))}
-          </ul>
-        )}
+        {isSearchFocused && searchText ? (
+          searchResult.length > 0 ? (
+            <div className="absolute top-full left-0 w-full bg-white border border-gray-300 shadow-md rounded mt-2 overflow-y-auto max-h-40">
+              <ul>
+                {searchResult.map((item: string, index: number) => (
+                  <li
+                    key={index}
+                    className="px-4 py-2 hover:bg-gray-100"
+                    dangerouslySetInnerHTML={{
+                      __html: highlightMatch(item, searchText),
+                    }}
+                  />
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div className="absolute top-full left-0 w-full bg-white border border-gray-300 shadow-md rounded mt-2 overflow-y-auto max-h-40">
+              <ul>
+                <li className="px-4 py-2 hover:bg-gray-100">
+                  No results found.
+                </li>
+              </ul>
+            </div>
+          )
+        ) : null}
       </div>
       <form
         className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-6"
